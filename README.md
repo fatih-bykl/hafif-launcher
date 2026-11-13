@@ -5,6 +5,16 @@ Android TV / Google TV için **reklamsız, hızlı ve çok az RAM kullanan** bir
 
 > **English:** A tiny (~21 KB), ad-free, low-RAM home screen for Android TV. Favorites row + all-apps grid, D-pad friendly, no permissions, no libraries, no background services. Built without Gradle.
 
+## Ekran görüntüleri
+
+![Ana ekran: favoriler ve tüm uygulamalar](docs/screenshots/1-ana-ekran.png)
+
+| Seçili uygulama (mavi çerçeve) | Favori düzenleme menüsü |
+|---|---|
+| ![Uygulama ızgarası](docs/screenshots/2-uygulamalar.png) | ![Favori menüsü](docs/screenshots/3-favori-menusu.png) |
+
+*TCL Smart TV Pro, Android TV 11, 1920×1080.*
+
 ## İndir
 
 **[⬇ HafifLauncher.apk — en son sürüm](../../releases/latest/download/HafifLauncher.apk)**
