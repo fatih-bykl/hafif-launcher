@@ -132,7 +132,7 @@ public class MainActivity extends Activity {
     // ---------- Arayüz ----------
 
     private View buildRoot() {
-        ScrollView scroll = new ScrollView(this);
+        ScrollView scroll = new CenterScroll.V(this); // seçili satır dikeyde ortalanır
         scroll.setFillViewport(true);
         scroll.setVerticalScrollBarEnabled(false);
 
@@ -217,7 +217,7 @@ public class MainActivity extends Activity {
         root.addView(top, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(66)));
 
         root.addView(sectionTitle("Favoriler"));
-        favScroll = new HorizontalScrollView(this);
+        favScroll = new CenterScroll.H(this); // seçili favori yatayda ortalanır
         favScroll.setHorizontalScrollBarEnabled(false);
         favScroll.setClipChildren(false);
         favScroll.setClipToPadding(false);
@@ -447,6 +447,9 @@ public class MainActivity extends Activity {
 
         int usable = getResources().getDisplayMetrics().widthPixels - 2 * px(SIDE);
         int fw = Math.round(usable / 3.6f) - px(16), fh = fw * 9 / 16; // favoriler büyük kartlar
+        // Kenar boşluğu yarım ekran: ilk ve son favori de ekranın ortasına gelebilsin
+        int side = Math.max(px(SIDE), (getResources().getDisplayMetrics().widthPixels - fw) / 2 - px(8));
+        favScroll.setPadding(side, px(8), side, px(8));
         for (String p : favs) favRow.addView(card(p, fw, fh));
         if (favs.isEmpty()) {
             TextView t = new TextView(this);
