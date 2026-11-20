@@ -83,6 +83,10 @@ public class MainActivity extends Activity {
         dp = getResources().getDisplayMetrics().density;
         getWindow().getDecorView().setBackgroundColor(BG);
         setContentView(buildRoot());
+        // Tüm Uygulamalar: odak orada değilken soluk ve koyu, odak inince belirgin
+        setAllAppsActive(false, false);
+        getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener(
+                (oldF, newF) -> setAllAppsActive(isInside(newF, allBox), true));
         applyFavsExtra(getIntent());
     }
 
@@ -229,6 +233,54 @@ public class MainActivity extends Activity {
         root.addView(hint);
 
         return scroll;
+    }
+
+    // ---------- Tüm Uygulamalar soluklaştırma ----------
+
+    private static final float DIM_ALPHA = 0.45f;     // odak yokken saydamlık
+    private static final float DIM_SATURATION = 0.2f; // odak yokken renk doygunluğu
+    private Boolean allActive;
+    private android.animation.ValueAnimator dimAnim;
+    private float dimLevel = 1f; // 1 = tam belirgin, 0 = soluk
+    private final android.graphics.Paint dimPaint = new android.graphics.Paint();
+
+    private static boolean isInside(View v, View parent) {
+        while (v != null) {
+            if (v == parent) return true;
+            v = v.getParent() instanceof View ? (View) v.getParent() : null;
+        }
+        return false;
+    }
+
+    private void setAllAppsActive(boolean active, boolean animate) {
+        if (allActive != null && allActive == active) return;
+        allActive = active;
+        if (dimAnim != null) dimAnim.cancel();
+        float to = active ? 1f : 0f;
+        if (!animate) {
+            applyDim(to);
+            return;
+        }
+        dimAnim = android.animation.ValueAnimator.ofFloat(dimLevel, to);
+        dimAnim.setDuration(220);
+        dimAnim.addUpdateListener(a -> applyDim((float) a.getAnimatedValue()));
+        dimAnim.start();
+    }
+
+    private void applyDim(float level) {
+        dimLevel = level;
+        float alpha = DIM_ALPHA + (1f - DIM_ALPHA) * level;
+        float sat = DIM_SATURATION + (1f - DIM_SATURATION) * level;
+        android.graphics.ColorMatrix cm = new android.graphics.ColorMatrix();
+        cm.setSaturation(sat);
+        dimPaint.setColorFilter(new android.graphics.ColorMatrixColorFilter(cm));
+        if (level >= 1f) {
+            allBox.setLayerType(View.LAYER_TYPE_NONE, null); // tam belirginken katman gereksiz
+        } else {
+            allBox.setLayerType(View.LAYER_TYPE_HARDWARE, dimPaint);
+        }
+        allBox.setAlpha(alpha);
+        allTitle.setAlpha(alpha);
     }
 
     /** Alttaki metnin yazı boyunu, genişliği üstteki metninkine eşit olacak şekilde ayarlar. */
