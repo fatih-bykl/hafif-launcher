@@ -31,8 +31,18 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 final class NetMeter {
 
-    private static final String DOWN_URL = "https://speed.cloudflare.com/__down?bytes=25000000";
+    private static final String TAG = "HafifHiz";
+    // İndirme sunucuları sırayla denenir: biri reddederse (ör. Cloudflare "429 çok fazla istek") sonrakine geçilir.
+    // Cloudflare büyük istekleri sık sık sınırladığı için 5 MB'lık parçalar istenir.
+    private static final String[] DOWN_URLS = {
+            "https://speed.cloudflare.com/__down?bytes=5000000",
+            "https://proof.ovh.net/files/100Mb.dat",
+            "https://nbg1-speed.hetzner.com/100MB.bin",
+            "https://fsn1-speed.hetzner.com/100MB.bin",
+    };
     private static final String UP_URL = "https://speed.cloudflare.com/__up";
+    private static volatile int downIdx;
+    private static volatile String lastError;
     private static final int STREAMS = 4;
     private static final long PHASE_MS = 8000;
     private static final int UP_CHUNK_BYTES = 8 * 1024 * 1024;
@@ -190,21 +200,28 @@ final class NetMeter {
         testing = true;
         live.setText("Hız testi başlıyor…");
         info.setText(netLine() + "\nLütfen bekleyin (~16 sn)");
+        downIdx = 0;
+        lastError = null;
         new Thread(() -> {
             double down = -1, up = -1;
             try {
                 down = phase(true);
                 up = phase(false);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                android.util.Log.w(TAG, "hız testi", e);
+                lastError = e.getClass().getSimpleName();
             }
             final double d = down, u = up;
+            final String err = lastError;
             ui.post(() -> {
                 if (d <= 0 && u <= 0) {
-                    lastTest = "başarısız (internet?)";
+                    lastTest = "başarısız" + (err != null ? " (" + err + ")" : "");
+                    live.setText("Hız testi başarısız");
                 } else {
-                    lastTest = "↓" + mbps(d) + " ↑" + mbps(u) + " Mbps";
+                    lastTest = "↓" + mbps(d) + " ↑" + mbps(u) + " Mbps"
+                            + ((d <= 0 || u <= 0) && err != null ? " (" + err + ")" : "");
+                    live.setText("↓ " + mbps(d) + " Mbps   ↑ " + mbps(u) + " Mbps");
                 }
-                live.setText(d > 0 ? "↓ " + mbps(d) + " Mbps   ↑ " + mbps(u) + " Mbps" : "Hız testi başarısız");
                 testing = false;
                 lastRx = -1;
                 refreshInfo();
@@ -226,11 +243,19 @@ final class NetMeter {
         for (int i = 0; i < STREAMS; i++) {
             th[i] = new Thread(() -> {
                 while (SystemClock.elapsedRealtime() < deadline) {
+                    if (download && downIdx >= DOWN_URLS.length) return; // tüm sunucular denendi
+                    int idx = downIdx;
                     try {
-                        if (download) downOnce(bytes, firstByteAt, deadline);
+                        if (download) downOnce(idx, bytes, firstByteAt, deadline);
                         else upOnce(bytes, firstByteAt, deadline);
                     } catch (Exception e) {
-                        return;
+                        if (download) {
+                            failServer(idx, e.getClass().getSimpleName());
+                        } else {
+                            android.util.Log.w(TAG, "yükleme hatası", e);
+                            lastError = "yükleme: " + e.getClass().getSimpleName();
+                            return;
+                        }
                     }
                 }
             });
@@ -269,8 +294,21 @@ final class NetMeter {
         return c;
     }
 
-    private static void downOnce(AtomicLong bytes, long[] firstByteAt, long deadline) throws Exception {
-        HttpURLConnection c = open(DOWN_URL);
+    /** Sunucu reddetti ya da hata verdi: sıradaki sunucuya geç (yalnızca bir kez, aynı sunucu için). */
+    private static synchronized void failServer(int idx, String reason) {
+        android.util.Log.w(TAG, "indirme sunucusu " + DOWN_URLS[idx] + " başarısız: " + reason);
+        lastError = reason;
+        if (downIdx == idx) downIdx = idx + 1;
+    }
+
+    private static void downOnce(int idx, AtomicLong bytes, long[] firstByteAt, long deadline) throws Exception {
+        HttpURLConnection c = open(DOWN_URLS[idx]);
+        int code = c.getResponseCode();
+        if (code != 200) {
+            c.disconnect();
+            failServer(idx, "HTTP " + code);
+            return;
+        }
         try (InputStream in = c.getInputStream()) {
             byte[] buf = new byte[64 * 1024];
             int n;
