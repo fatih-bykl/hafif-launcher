@@ -261,6 +261,17 @@ public class MainActivity extends Activity {
         for (int j = 0; j < favRow.getChildCount(); j++) {
             View c = favRow.getChildAt(j);
             float rot = 0f;
+            if (j == idx) {
+                // Seçili kart: eğim hemen sıfırlanır ve dönme/büyüme merkezi ortaya alınır;
+                // böylece %10 büyüme iki yana eşit olur, komşularla boşluklar eşit kalır.
+                Object prev = c.getTag(R_TILT);
+                if (prev instanceof Anim.Handle) ((Anim.Handle) prev).cancel();
+                c.setTag(R_TILT, null);
+                c.setRotationY(0f);
+                c.setPivotX(c.getWidth() / 2f);
+                c.setPivotY(c.getHeight() / 2f);
+                continue;
+            }
             if (idx >= 0 && j == idx - 1) {
                 c.setPivotX(0);              // uzak (sol) kenar yerinde, yakın (sağ) kenar arkaya
                 rot = TILT_DEG;
@@ -274,7 +285,10 @@ public class MainActivity extends Activity {
             final View cv = c;
             final float r0 = c.getRotationY(), r1 = rot;
             Anim.replace(c, R_TILT, 220, new android.view.animation.DecelerateInterpolator(),
-                    t -> cv.setRotationY(r0 + (r1 - r0) * t), () -> cv.setTag(R_TILT, null));
+                    t -> cv.setRotationY(r0 + (r1 - r0) * t), () -> {
+                        cv.setTag(R_TILT, null);
+                        if (r1 == 0f) cv.setPivotX(cv.getWidth() / 2f); // düzleşen kart yeniden ortadan büyüsün
+                    });
         }
     }
 
