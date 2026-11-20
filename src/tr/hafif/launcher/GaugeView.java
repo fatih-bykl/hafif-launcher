@@ -108,9 +108,9 @@ final class GaugeView extends View {
         g.setLocalMatrix(m);
         arc.setShader(g);
 
-        label.setTextSize(Math.max(6.5f * dp, size * 0.085f));
-        value.setTextSize(size * 0.22f);
-        unit.setTextSize(size * 0.1f);
+        label.setTextSize(Math.max(4.5f * dp, size * 0.068f));
+        value.setTextSize(size * 0.19f);
+        unit.setTextSize(size * 0.085f);
     }
 
     @Override
@@ -130,12 +130,11 @@ final class GaugeView extends View {
         c.drawArc(oval, START, SWEEP, false, track);
         if (frac > 0.002f) c.drawArc(oval, START, SWEEP * frac, false, arc);
 
-        // ölçek yazıları (yayın içinde)
-        float lr = r - arc.getStrokeWidth() * 1.55f;
+        // ölçek yazıları: örnekteki gibi tüm kademeler, yayın hemen iç kenarında eşit aralıkla
+        // (0 sol altta, 100 tepede, 1000 sağ altta)
+        float lr = r - arc.getStrokeWidth() * 0.5f - label.getTextSize() * 1.15f;
         float ty = -(label.ascent() + label.descent()) / 2;
         for (int i = 0; i < STEPS.length; i++) {
-            // küçük boyutta kalabalık olmasın: 0, 5, 50, 750, 1000 gizli (0 ve 1000 alttaki değerle çakışır)
-            if (i == 0 || i == 1 || i == 3 || i == 7 || i == STEPS.length - 1) continue;
             double a = Math.toRadians(START + SWEEP * i / (STEPS.length - 1));
             c.drawText(LABELS[i], cx + (float) Math.cos(a) * lr, cy + (float) Math.sin(a) * lr + ty, label);
         }
@@ -156,7 +155,8 @@ final class GaugeView extends View {
         c.drawCircle(cx, cy, base * 1.2f, hub);
 
         // değer ve birim (alt boşlukta)
-        float vy = cy + r * 0.62f;
+        // değer: alttaki açıklıkta, 0 ile 1000 yazılarının arasında (örnekteki gibi)
+        float vy = cy + r * 0.74f;
         c.drawText(fmt(shown), cx, vy, value);
         c.drawText("Mbps", cx, vy + unit.getTextSize() * 1.1f, unit);
 
