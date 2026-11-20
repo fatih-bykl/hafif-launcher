@@ -56,6 +56,7 @@ final class NetMeter {
     private final float dp;
     // Gösterge boyutu (dp): normalde küçük, test sırasında büyük
     private static final float SMALL_W = 50, SMALL_H = 48, BIG_W = 104, BIG_H = 100;
+    private static final float LIFT_DP = 10; // test sırasında yukarı kayma
     private android.animation.ValueAnimator sizeAnim;
     private int smallBoxH;
     private long holdGaugeUntil; // test sonucu ibrede bir süre kalsın
@@ -129,6 +130,8 @@ final class NetMeter {
         final int w0 = lp.width, h0 = lp.height;
         final int w1 = Math.round((big ? BIG_W : SMALL_W) * dp), h1 = Math.round((big ? BIG_H : SMALL_H) * dp);
         final int vpad = view.getPaddingTop() + view.getPaddingBottom();
+        // Test sırasında kutu biraz yukarı kayar; büyük hâlde favorilere fazla yaklaşmasın
+        final float ty0 = view.getTranslationY(), ty1 = big ? -LIFT_DP * dp : 0f;
         if (big) smallBoxH = view.getHeight();
         sizeAnim = android.animation.ValueAnimator.ofFloat(0f, 1f);
         sizeAnim.setDuration(280);
@@ -138,6 +141,7 @@ final class NetMeter {
             lp.width = Math.round(w0 + (w1 - w0) * f);
             lp.height = Math.round(h0 + (h1 - h0) * f);
             gauge.setLayoutParams(lp);
+            view.setTranslationY(ty0 + (ty1 - ty0) * f);
             if (boxLp != null) {
                 boxLp.height = Math.max(smallBoxH, lp.height + vpad);
                 view.setLayoutParams(boxLp);
