@@ -87,7 +87,11 @@ public class MainActivity extends Activity {
         // Tüm Uygulamalar: odak orada değilken soluk ve koyu, odak inince belirgin
         setAllAppsActive(false, false);
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener(
-                (oldF, newF) -> setAllAppsActive(isInside(newF, allBox), true));
+                (oldF, newF) -> {
+                    setAllAppsActive(isInside(newF, allBox), true);
+                    // Favorilerde: seçili kartın komşuları içe doğru eğilir; satırdan çıkınca düzleşir
+                    tiltAround(newF != null && newF.getParent() == favRow ? newF : null);
+                });
         applyFavsExtra(getIntent());
     }
 
@@ -246,6 +250,38 @@ public class MainActivity extends Activity {
 
         return scroll;
     }
+
+    // ---------- Favoriler: komşu kartların 3B eğimi ----------
+
+    private static final float TILT_DEG = 18f; // komşu kartların yakın kenarı bu açıyla arkaya kıvrılır
+
+    /** Seçili kartın solundaki ve sağındaki kartların seçili karta yakın kenarlarını arkaya eğer. */
+    private void tiltAround(View focused) {
+        int idx = focused == null ? -1 : favRow.indexOfChild(focused);
+        for (int j = 0; j < favRow.getChildCount(); j++) {
+            View c = favRow.getChildAt(j);
+            float rot = 0f;
+            if (idx >= 0 && j == idx - 1) {
+                c.setPivotX(0);              // uzak (sol) kenar yerinde, yakın (sağ) kenar arkaya
+                rot = TILT_DEG;
+            } else if (idx >= 0 && j == idx + 1) {
+                c.setPivotX(c.getWidth());   // uzak (sağ) kenar yerinde, yakın (sol) kenar arkaya
+                rot = -TILT_DEG;
+            }
+            c.setPivotY(c.getHeight() / 2f);
+            c.setCameraDistance(12000 * dp);
+            Object prev = c.getTag(R_TILT);
+            if (prev instanceof android.animation.Animator) ((android.animation.Animator) prev).cancel();
+            if (c.getRotationY() == rot) continue;
+            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(c, View.ROTATION_Y, rot);
+            a.setDuration(220);
+            a.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            c.setTag(R_TILT, a);
+            a.start();
+        }
+    }
+
+    private static final int R_TILT = 0x7f0a5151;
 
     // ---------- Tüm Uygulamalar soluklaştırma ----------
 
