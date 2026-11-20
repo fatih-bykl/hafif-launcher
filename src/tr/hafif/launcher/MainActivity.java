@@ -237,8 +237,8 @@ public class MainActivity extends Activity {
 
     // ---------- Tüm Uygulamalar soluklaştırma ----------
 
-    private static final float DIM_ALPHA = 0.45f;     // odak yokken saydamlık
-    private static final float DIM_SATURATION = 0.2f; // odak yokken renk doygunluğu
+    private static final float DIM_ALPHA = 0.15f;     // odak yokken saydamlık (çok az görünür)
+    private static final float DIM_SATURATION = 0.1f; // odak yokken renk doygunluğu
     private Boolean allActive;
     private android.animation.ValueAnimator dimAnim;
     private float dimLevel = 1f; // 1 = tam belirgin, 0 = soluk
