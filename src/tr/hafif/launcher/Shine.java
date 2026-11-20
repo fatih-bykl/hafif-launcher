@@ -75,10 +75,11 @@ final class Shine extends Drawable {
     @Override
     protected void onBoundsChange(android.graphics.Rect b) {
         float w = b.width();
-        // Işık şeridi: genişliğin ~%35'i; ortası parlak, kenarları saydam
+        // Işık şeridi: genişliğin ~%35'i. Kenarlarda hafif mavi ton (beyaz kartlarda da görünsün),
+        // ortada beyaza yakın parlak çekirdek; uçlar saydam.
         shader = new LinearGradient(0, 0, w * 0.35f, 0,
-                new int[]{0x00FFFFFF, 0x26FFFFFF, 0x80FFFFFF, 0x26FFFFFF, 0x00FFFFFF},
-                new float[]{0f, 0.3f, 0.5f, 0.7f, 1f}, Shader.TileMode.CLAMP);
+                new int[]{0x004FA8FF, 0x404FA8FF, 0x8CBFE6FF, 0xB3F2FAFF, 0x8CBFE6FF, 0x404FA8FF, 0x004FA8FF},
+                new float[]{0f, 0.22f, 0.42f, 0.5f, 0.58f, 0.78f, 1f}, Shader.TileMode.CLAMP);
         paint.setShader(shader);
         rect.set(b);
         clip.reset();
