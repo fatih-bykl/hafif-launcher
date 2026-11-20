@@ -447,9 +447,9 @@ public class MainActivity extends Activity {
 
         int usable = getResources().getDisplayMetrics().widthPixels - 2 * px(SIDE);
         int fw = Math.round(usable / 3.6f) - px(16), fh = fw * 9 / 16; // favoriler büyük kartlar
-        // Kenar boşluğu yarım ekran: ilk ve son favori de ekranın ortasına gelebilsin
-        int side = Math.max(px(SIDE), (getResources().getDisplayMetrics().widthPixels - fw) / 2 - px(8));
-        favScroll.setPadding(side, px(8), side, px(8));
+        // Normal kenar boşluğu: ilk favori en başta durur. Ortalama kaydırması sınırlarda durur;
+        // böylece başta ve sonda seçim kenardaki karta gider, aradakiler ortada seçilir.
+        favScroll.setPadding(px(SIDE), px(8), px(SIDE), px(8));
         for (String p : favs) favRow.addView(card(p, fw, fh));
         if (favs.isEmpty()) {
             TextView t = new TextView(this);
