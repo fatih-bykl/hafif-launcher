@@ -184,7 +184,13 @@ public class MainActivity extends Activity {
 
         netMeter = new NetMeter(this, dp);
         styleFocus(netMeter.view, px(12));
-        top.addView(netMeter.view);
+        // Kutu üst kenarından sabit: test sırasında büyüyen gösterge ekranın üstüne taşmasın,
+        // yalnızca aşağı doğru (favorilerin başlığının üzerine) açılsın.
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        nlp.gravity = Gravity.TOP;
+        nlp.topMargin = px(5); // küçük hâlde (≈56 dp) 66 dp'lik çubukta ortalı durur
+        top.addView(netMeter.view, nlp);
 
         // Ayarlar: aynı boyutta yuvarlak buton, içinde vektör çark simgesi
         FrameLayout settings = new FrameLayout(this);
