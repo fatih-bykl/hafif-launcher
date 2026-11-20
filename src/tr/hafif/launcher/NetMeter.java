@@ -71,7 +71,9 @@ final class NetMeter {
         info = new TextView(c);
         info.setTextColor(0xFF9AA4B2);
         info.setTextSize(10);
-        info.setMaxLines(1);
+        // 2 satır: "Wi-Fi 300 Mbps · IP 192.168.1.65" ve "Test ↓… ↑… Mbps"
+        info.setMaxLines(2);
+        info.setLineSpacing(0, 0.95f);
         info.setEllipsize(android.text.TextUtils.TruncateAt.END);
         info.setGravity(Gravity.END);
         view.addView(info, new LinearLayout.LayoutParams(
@@ -79,7 +81,7 @@ final class NetMeter {
 
         // Metin uzayıp kısaldıkça kutu zıplamasın ve kırpılmasın: en uzun metne göre sabit genişlik
         float w = Math.max(
-                info.getPaint().measureText("Wi-Fi 1200 Mbps · Test ↓1000 ↑1000 Mbps"),
+                info.getPaint().measureText("Wi-Fi 1200 Mbps · IP 192.168.100.100"),
                 live.getPaint().measureText("Test ↓ 1000 Mbps…  ↓ 99.9 MB/s"));
         info.setMinWidth(Math.round(w));
         live.setMinWidth(Math.round(w));
@@ -152,9 +154,33 @@ final class NetMeter {
         }
     }
 
+    private String netLine() {
+        String ip = localIp();
+        return ip == null ? linkText() : linkText() + " · IP " + ip;
+    }
+
+    /** Cihazın yerel IPv4 adresi (Wi-Fi/Ethernet öncelikli); izin gerektirmez. */
+    private static String localIp() {
+        try {
+            String fallback = null;
+            for (java.net.NetworkInterface ni : java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())) {
+                if (!ni.isUp() || ni.isLoopback()) continue;
+                for (java.net.InetAddress a : java.util.Collections.list(ni.getInetAddresses())) {
+                    if (!(a instanceof java.net.Inet4Address) || a.isLoopbackAddress()) continue;
+                    String name = ni.getName();
+                    if (name.startsWith("wlan") || name.startsWith("eth")) return a.getHostAddress();
+                    if (fallback == null) fallback = a.getHostAddress();
+                }
+            }
+            return fallback;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private void refreshInfo() {
         String t = lastTest != null ? "Test " + lastTest : "Hız testi için OK";
-        info.setText(linkText() + " · " + t);
+        info.setText(netLine() + "\n" + t);
     }
 
     // ---------- Hız testi ----------
@@ -163,7 +189,7 @@ final class NetMeter {
         if (testing) return;
         testing = true;
         live.setText("Hız testi başlıyor…");
-        info.setText(linkText() + " · Lütfen bekleyin (~16 sn)");
+        info.setText(netLine() + "\nLütfen bekleyin (~16 sn)");
         new Thread(() -> {
             double down = -1, up = -1;
             try {
