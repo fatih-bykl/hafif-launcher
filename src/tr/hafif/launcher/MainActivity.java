@@ -197,7 +197,9 @@ public class MainActivity extends Activity {
         slp.leftMargin = px(16);
         top.addView(settings, slp);
         top.setPadding(px(SIDE + 8), 0, px(SIDE + 8), 0);
-        root.addView(top);
+        // Sabit yükseklik: test sırasında büyüyen gösterge sayfayı aşağı itmesin, üstte taşsın
+        top.setTranslationZ(px(4));
+        root.addView(top, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(66)));
 
         root.addView(sectionTitle("Favoriler"));
         favScroll = new HorizontalScrollView(this);

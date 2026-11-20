@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.view.Gravity;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -52,6 +53,11 @@ final class NetMeter {
     private final TextView live;
     private final TextView info;
     private final GaugeView gauge;
+    private final float dp;
+    // Gösterge boyutu (dp): normalde küçük, test sırasında büyük
+    private static final float SMALL_W = 50, SMALL_H = 48, BIG_W = 104, BIG_H = 100;
+    private android.animation.ValueAnimator sizeAnim;
+    private int smallBoxH;
     private long holdGaugeUntil; // test sonucu ibrede bir süre kalsın
     private final Handler ui = new Handler(Looper.getMainLooper());
 
@@ -72,7 +78,8 @@ final class NetMeter {
         view.setPadding(Math.round(6 * dp), pv, ph, pv);
 
         gauge = new GaugeView(c, dp);
-        LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(Math.round(72 * dp), Math.round(70 * dp));
+        this.dp = dp;
+        LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(Math.round(SMALL_W * dp), Math.round(SMALL_H * dp));
         glp.rightMargin = Math.round(8 * dp);
         view.addView(gauge, glp);
 
@@ -111,6 +118,41 @@ final class NetMeter {
 
         view.setOnClickListener(v -> runTest());
         refreshInfo();
+    }
+
+    /** Göstergeyi test sırasında büyütür, bitince küçültür (yumuşak geçiş). */
+    private void resizeGauge(boolean big) {
+        if (sizeAnim != null) sizeAnim.cancel();
+        final LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) gauge.getLayoutParams();
+        // Kutunun yüksekliği açıkça verilir; yoksa sabit yükseklikli üst çubuk kutuyu sıkıştırır
+        final ViewGroup.LayoutParams boxLp = view.getLayoutParams();
+        final int w0 = lp.width, h0 = lp.height;
+        final int w1 = Math.round((big ? BIG_W : SMALL_W) * dp), h1 = Math.round((big ? BIG_H : SMALL_H) * dp);
+        final int vpad = view.getPaddingTop() + view.getPaddingBottom();
+        if (big) smallBoxH = view.getHeight();
+        sizeAnim = android.animation.ValueAnimator.ofFloat(0f, 1f);
+        sizeAnim.setDuration(280);
+        sizeAnim.setInterpolator(new android.view.animation.DecelerateInterpolator());
+        sizeAnim.addUpdateListener(a -> {
+            float f = (float) a.getAnimatedValue();
+            lp.width = Math.round(w0 + (w1 - w0) * f);
+            lp.height = Math.round(h0 + (h1 - h0) * f);
+            gauge.setLayoutParams(lp);
+            if (boxLp != null) {
+                boxLp.height = Math.max(smallBoxH, lp.height + vpad);
+                view.setLayoutParams(boxLp);
+            }
+        });
+        sizeAnim.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator a) {
+                if (!big && boxLp != null && lp.height == h1) {
+                    boxLp.height = ViewGroup.LayoutParams.WRAP_CONTENT; // normal boyuta dön
+                    view.setLayoutParams(boxLp);
+                }
+            }
+        });
+        sizeAnim.start();
     }
 
     // ---------- Anlık hız ----------
@@ -212,6 +254,7 @@ final class NetMeter {
     private void runTest() {
         if (testing) return;
         testing = true;
+        resizeGauge(true);
         live.setText("Hız testi başlıyor…");
         info.setText(netLine() + "\nLütfen bekleyin (~16 sn)");
         downIdx = 0;
@@ -239,6 +282,7 @@ final class NetMeter {
                 gauge.setMbps((float) Math.max(d, 0));
                 holdGaugeUntil = SystemClock.elapsedRealtime() + 15000;
                 testing = false;
+                resizeGauge(false);
                 lastRx = -1;
                 refreshInfo();
             });
