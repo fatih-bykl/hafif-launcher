@@ -138,45 +138,61 @@ public class MainActivity extends Activity {
         root.setClipChildren(false);
         scroll.addView(root);
 
-        // Üst çubuk: tarih solda, saat ve ayarlar sağda
+        // Üst çubuk: solda saat ve hemen altında aynı genişlikte tarih; sağda hız göstergesi ve ayarlar çarkı
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
+        // Seçili butonun büyüme efekti ve çerçevesi kenarda kesilmesin
+        top.setClipChildren(false);
+        top.setClipToPadding(false);
 
-        TextClock date = new TextClock(this);
-        date.setFormat12Hour("d MMMM EEEE");
-        date.setFormat24Hour("d MMMM EEEE");
-        date.setTextColor(0xFFB0B8C4);
-        date.setTextSize(18);
-        top.addView(date, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        LinearLayout timeBox = new LinearLayout(this);
+        timeBox.setOrientation(LinearLayout.VERTICAL);
 
-        // İnternet hızı butonu: saatin hemen solunda
-        netMeter = new NetMeter(this, dp);
-        styleFocus(netMeter.view, px(16));
-        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        nlp.rightMargin = px(24);
-        top.addView(netMeter.view, nlp);
-
-        TextClock clock = new TextClock(this);
+        final TextClock clock = new TextClock(this);
         clock.setFormat12Hour("HH:mm");
         clock.setFormat24Hour("HH:mm");
         clock.setTextColor(Color.WHITE);
-        clock.setTextSize(30);
+        clock.setTextSize(36);
         clock.setTypeface(Typeface.DEFAULT_BOLD);
-        top.addView(clock);
+        clock.setIncludeFontPadding(false);
+        timeBox.addView(clock);
+
+        final TextClock date = new TextClock(this);
+        date.setFormat12Hour("d MMMM yyyy");
+        date.setFormat24Hour("d MMMM yyyy");
+        date.setTextColor(0xFFB0B8C4);
+        date.setTextSize(14);
+        date.setIncludeFontPadding(false);
+        date.setSingleLine(true);
+        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        dlp.topMargin = px(4);
+        timeBox.addView(date, dlp);
+
+        // Tarihin genişliği saatin genişliğine eşit olsun (saat/tarih değiştikçe yeniden ayarlanır)
+        View.OnLayoutChangeListener fit = (v, l, t, r, b, ol, ot, or, ob) -> v.post(() -> fitWidth(clock, date));
+        clock.addOnLayoutChangeListener(fit);
+        date.addOnLayoutChangeListener(fit);
+
+        top.addView(timeBox, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        netMeter = new NetMeter(this, dp);
+        styleFocus(netMeter.view, px(12));
+        top.addView(netMeter.view);
 
         TextView settings = new TextView(this);
-        settings.setText("⚙  Ayarlar");
+        settings.setText("⚙");
+        settings.setContentDescription("Ayarlar");
         settings.setTextColor(Color.WHITE);
-        settings.setTextSize(16);
-        settings.setPadding(px(16), px(8), px(16), px(8));
+        settings.setTextSize(24);
+        settings.setGravity(Gravity.CENTER);
+        settings.setIncludeFontPadding(false);
         settings.setFocusable(true);
-        styleFocus(settings, px(20));
+        styleFocus(settings, px(26));
         settings.setOnClickListener(v -> launch(new Intent(Settings.ACTION_SETTINGS)));
-        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        slp.leftMargin = px(24);
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(px(52), px(52));
+        slp.leftMargin = px(16);
         top.addView(settings, slp);
         top.setPadding(px(SIDE + 8), 0, px(SIDE + 8), 0);
         root.addView(top);
@@ -209,6 +225,17 @@ public class MainActivity extends Activity {
         root.addView(hint);
 
         return scroll;
+    }
+
+    /** Alttaki metnin yazı boyunu, genişliği üstteki metninkine eşit olacak şekilde ayarlar. */
+    private static void fitWidth(TextView ref, TextView target) {
+        float rw = ref.getPaint().measureText(ref.getText().toString());
+        float tw = target.getPaint().measureText(target.getText().toString());
+        if (rw <= 0 || tw <= 0) return;
+        float size = target.getTextSize() * rw / tw;
+        if (Math.abs(size - target.getTextSize()) > 0.5f) {
+            target.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size);
+        }
     }
 
     private TextView sectionTitle(String s) {

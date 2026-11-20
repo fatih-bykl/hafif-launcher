@@ -55,12 +55,12 @@ final class NetMeter {
         view.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
         view.setFocusable(true);
         view.setClickable(true);
-        int ph = Math.round(14 * dp), pv = Math.round(6 * dp);
+        int ph = Math.round(10 * dp), pv = Math.round(4 * dp);
         view.setPadding(ph, pv, ph, pv);
 
         live = new TextView(c);
         live.setTextColor(Color.WHITE);
-        live.setTextSize(17);
+        live.setTextSize(13);
         live.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         live.setMaxLines(1);
         live.setGravity(Gravity.END);
@@ -70,7 +70,7 @@ final class NetMeter {
 
         info = new TextView(c);
         info.setTextColor(0xFF9AA4B2);
-        info.setTextSize(12);
+        info.setTextSize(10);
         info.setMaxLines(1);
         info.setEllipsize(android.text.TextUtils.TruncateAt.END);
         info.setGravity(Gravity.END);
