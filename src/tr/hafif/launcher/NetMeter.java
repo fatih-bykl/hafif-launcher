@@ -249,6 +249,8 @@ final class NetMeter {
                         if (download) downOnce(idx, bytes, firstByteAt, deadline);
                         else upOnce(bytes, firstByteAt, deadline);
                     } catch (Exception e) {
+                        // Süre dolunca bağlantıları bilerek kesiyoruz; o anki hatalar gerçek hata değil
+                        if (SystemClock.elapsedRealtime() >= deadline) return;
                         if (download) {
                             failServer(idx, e.getClass().getSimpleName());
                         } else {
