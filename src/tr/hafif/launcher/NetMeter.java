@@ -51,6 +51,8 @@ final class NetMeter {
     final LinearLayout view;
     private final TextView live;
     private final TextView info;
+    private final GaugeView gauge;
+    private long holdGaugeUntil; // test sonucu ibrede bir süre kalsın
     private final Handler ui = new Handler(Looper.getMainLooper());
 
     private long lastRx = -1, lastTx = -1, lastT;
@@ -60,13 +62,24 @@ final class NetMeter {
 
     NetMeter(Context c, float dp) {
         ctx = c.getApplicationContext();
+        // Solda ibreli gösterge, sağda yazılar
         view = new LinearLayout(c);
-        view.setOrientation(LinearLayout.VERTICAL);
-        view.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        view.setOrientation(LinearLayout.HORIZONTAL);
+        view.setGravity(Gravity.CENTER_VERTICAL);
         view.setFocusable(true);
         view.setClickable(true);
         int ph = Math.round(10 * dp), pv = Math.round(4 * dp);
-        view.setPadding(ph, pv, ph, pv);
+        view.setPadding(Math.round(6 * dp), pv, ph, pv);
+
+        gauge = new GaugeView(c, dp);
+        LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(Math.round(72 * dp), Math.round(70 * dp));
+        glp.rightMargin = Math.round(8 * dp);
+        view.addView(gauge, glp);
+
+        LinearLayout texts = new LinearLayout(c);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        texts.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        view.addView(texts);
 
         live = new TextView(c);
         live.setTextColor(Color.WHITE);
@@ -75,7 +88,7 @@ final class NetMeter {
         live.setMaxLines(1);
         live.setGravity(Gravity.END);
         live.setText("↓ —   ↑ —");
-        view.addView(live, new LinearLayout.LayoutParams(
+        texts.addView(live, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         info = new TextView(c);
@@ -86,13 +99,13 @@ final class NetMeter {
         info.setLineSpacing(0, 0.95f);
         info.setEllipsize(android.text.TextUtils.TruncateAt.END);
         info.setGravity(Gravity.END);
-        view.addView(info, new LinearLayout.LayoutParams(
+        texts.addView(info, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         // Metin uzayıp kısaldıkça kutu zıplamasın ve kırpılmasın: en uzun metne göre sabit genişlik
         float w = Math.max(
                 info.getPaint().measureText("Wi-Fi 1200 Mbps · IP 192.168.100.100"),
-                live.getPaint().measureText("Test ↓ 1000 Mbps…  ↓ 99.9 MB/s"));
+                live.getPaint().measureText("↓ 99.9 MB/s   ↑ 99.9 MB/s"));
         info.setMinWidth(Math.round(w));
         live.setMinWidth(Math.round(w));
 
@@ -127,6 +140,7 @@ final class NetMeter {
                 } else if (lastRx >= 0 && now > lastT) {
                     double sec = (now - lastT) / 1000.0;
                     live.setText("↓ " + rate((rx - lastRx) / sec) + "   ↑ " + rate((tx - lastTx) / sec));
+                    if (now >= holdGaugeUntil) gauge.setMbps((float) ((rx - lastRx) * 8 / sec / 1_000_000.0));
                 }
                 refreshInfo();
             }
@@ -222,6 +236,8 @@ final class NetMeter {
                             + ((d <= 0 || u <= 0) && err != null ? " (" + err + ")" : "");
                     live.setText("↓ " + mbps(d) + " Mbps   ↑ " + mbps(u) + " Mbps");
                 }
+                gauge.setMbps((float) Math.max(d, 0));
+                holdGaugeUntil = SystemClock.elapsedRealtime() + 15000;
                 testing = false;
                 lastRx = -1;
                 refreshInfo();
@@ -267,7 +283,10 @@ final class NetMeter {
         while (SystemClock.elapsedRealtime() < deadline) {
             Thread.sleep(400);
             final double now = speed(bytes.get(), firstByteAt[0]);
-            ui.post(() -> live.setText("Test " + label + " " + mbps(now) + " Mbps…"));
+            ui.post(() -> {
+                live.setText("Test " + label + " " + mbps(now) + " Mbps…");
+                gauge.setMbps((float) now);
+            });
         }
         for (Thread t : th) t.join(3000);
         return speed(bytes.get(), firstByteAt[0]);
