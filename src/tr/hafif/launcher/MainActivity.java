@@ -191,6 +191,11 @@ public class MainActivity extends Activity {
         nlp.gravity = Gravity.TOP;
         nlp.topMargin = px(5); // küçük hâlde (≈56 dp) 66 dp'lik çubukta ortalı durur
         top.addView(netMeter.view, nlp);
+        // Seçilince büyüme sağ üst köşeden olsun: çarkın ve ekranın üstüne taşmasın (sola/aşağı büyür)
+        netMeter.view.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            v.setPivotX(v.getWidth());
+            v.setPivotY(0);
+        });
 
         // Ayarlar: aynı boyutta yuvarlak buton, içinde vektör çark simgesi
         FrameLayout settings = new FrameLayout(this);
@@ -204,7 +209,7 @@ public class MainActivity extends Activity {
         settings.addView(gear, new FrameLayout.LayoutParams(px(32), px(32), Gravity.CENTER));
         settings.setOnClickListener(v -> launch(new Intent(Settings.ACTION_SETTINGS)));
         LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(px(52), px(52));
-        slp.leftMargin = px(16);
+        slp.leftMargin = px(32); // hız kutusuyla arasında rahat boşluk
         top.addView(settings, slp);
         top.setPadding(px(SIDE + 8), 0, px(SIDE + 8), 0);
         // Sabit yükseklik: test sırasında büyüyen gösterge sayfayı aşağı itmesin, üstte taşsın
