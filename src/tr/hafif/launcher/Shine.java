@@ -1,6 +1,5 @@
 package tr.hafif.launcher;
 
-import android.animation.ValueAnimator;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.LinearGradient;
@@ -40,37 +39,27 @@ final class Shine extends Drawable {
         final Shine s = new Shine(radius);
         s.setBounds(0, 0, v.getWidth(), v.getHeight());
         v.getOverlay().add(s);
-        ValueAnimator a = ValueAnimator.ofFloat(0f, 1f);
-        a.setDuration(DURATION_MS);
-        a.setInterpolator(new AccelerateDecelerateInterpolator());
-        a.addUpdateListener(an -> {
-            s.progress = (float) an.getAnimatedValue();
+        // Sistemin animasyon ölçeğinden bağımsız (ayar 0 olsa da ışık geçer)
+        Anim.replace(v, R_SHINE, DURATION_MS, new AccelerateDecelerateInterpolator(), t -> {
+            s.progress = t;
             s.invalidateSelf();
-        });
-        a.addListener(new android.animation.AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(android.animation.Animator an) {
-                v.getOverlay().remove(s);
-            }
-
-            @Override
-            public void onAnimationCancel(android.animation.Animator an) {
-                v.getOverlay().remove(s);
-            }
-        });
-        v.setTag(R_SHINE, a);
-        a.start();
+        }, () -> v.getOverlay().remove(s));
+        v.setTag(R_SHINE_DRAWABLE, s);
     }
 
     /** Kartta süren ışık animasyonu varsa durdurur. */
     static void stop(View v) {
         Object a = v.getTag(R_SHINE);
-        if (a instanceof ValueAnimator) ((ValueAnimator) a).cancel();
+        if (a instanceof Anim.Handle) ((Anim.Handle) a).cancel();
+        Object d = v.getTag(R_SHINE_DRAWABLE);
+        if (d instanceof Drawable) v.getOverlay().remove((Drawable) d);
         v.setTag(R_SHINE, null);
+        v.setTag(R_SHINE_DRAWABLE, null);
     }
 
     // setTag(key) için uygulamaya özgü sabit bir anahtar (kaynak kimliği biçiminde)
     static final int R_SHINE = 0x7f0a5150;
+    static final int R_SHINE_DRAWABLE = 0x7f0a5152;
 
     @Override
     protected void onBoundsChange(android.graphics.Rect b) {

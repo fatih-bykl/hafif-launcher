@@ -57,7 +57,7 @@ final class NetMeter {
     // Gösterge boyutu (dp): normalde küçük, test sırasında büyük
     private static final float SMALL_W = 50, SMALL_H = 48, BIG_W = 104, BIG_H = 100;
     private static final float LIFT_DP = 10; // test sırasında yukarı kayma
-    private android.animation.ValueAnimator sizeAnim;
+    private Anim.Handle sizeAnim;
     private int smallBoxH;
     private long holdGaugeUntil; // test sonucu ibrede bir süre kalsın
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -133,11 +133,7 @@ final class NetMeter {
         // Test sırasında kutu biraz yukarı kayar; büyük hâlde favorilere fazla yaklaşmasın
         final float ty0 = view.getTranslationY(), ty1 = big ? -LIFT_DP * dp : 0f;
         if (big) smallBoxH = view.getHeight();
-        sizeAnim = android.animation.ValueAnimator.ofFloat(0f, 1f);
-        sizeAnim.setDuration(280);
-        sizeAnim.setInterpolator(new android.view.animation.DecelerateInterpolator());
-        sizeAnim.addUpdateListener(a -> {
-            float f = (float) a.getAnimatedValue();
+        sizeAnim = Anim.run(view, 280, new android.view.animation.DecelerateInterpolator(), f -> {
             lp.width = Math.round(w0 + (w1 - w0) * f);
             lp.height = Math.round(h0 + (h1 - h0) * f);
             gauge.setLayoutParams(lp);
@@ -146,17 +142,12 @@ final class NetMeter {
                 boxLp.height = Math.max(smallBoxH, lp.height + vpad);
                 view.setLayoutParams(boxLp);
             }
-        });
-        sizeAnim.addListener(new android.animation.AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(android.animation.Animator a) {
-                if (!big && boxLp != null && lp.height == h1) {
-                    boxLp.height = ViewGroup.LayoutParams.WRAP_CONTENT; // normal boyuta dön
-                    view.setLayoutParams(boxLp);
-                }
+        }, () -> {
+            if (!big && boxLp != null && lp.height == h1) {
+                boxLp.height = ViewGroup.LayoutParams.WRAP_CONTENT; // normal boyuta dön
+                view.setLayoutParams(boxLp);
             }
         });
-        sizeAnim.start();
     }
 
     // ---------- Anlık hız ----------

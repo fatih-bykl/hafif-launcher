@@ -270,25 +270,23 @@ public class MainActivity extends Activity {
             }
             c.setPivotY(c.getHeight() / 2f);
             c.setCameraDistance(12000 * dp);
-            Object prev = c.getTag(R_TILT);
-            if (prev instanceof android.animation.Animator) ((android.animation.Animator) prev).cancel();
-            if (c.getRotationY() == rot) continue;
-            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(c, View.ROTATION_Y, rot);
-            a.setDuration(220);
-            a.setInterpolator(new android.view.animation.DecelerateInterpolator());
-            c.setTag(R_TILT, a);
-            a.start();
+            if (c.getRotationY() == rot && !(c.getTag(R_TILT) instanceof Anim.Handle)) continue;
+            final View cv = c;
+            final float r0 = c.getRotationY(), r1 = rot;
+            Anim.replace(c, R_TILT, 220, new android.view.animation.DecelerateInterpolator(),
+                    t -> cv.setRotationY(r0 + (r1 - r0) * t), () -> cv.setTag(R_TILT, null));
         }
     }
 
     private static final int R_TILT = 0x7f0a5151;
+    private static final int R_SCALE = 0x7f0a5153;
 
     // ---------- Tüm Uygulamalar soluklaştırma ----------
 
     private static final float DIM_ALPHA = 0.15f;     // odak yokken saydamlık (çok az görünür)
     private static final float DIM_SATURATION = 0.1f; // odak yokken renk doygunluğu
     private Boolean allActive;
-    private android.animation.ValueAnimator dimAnim;
+    private Anim.Handle dimAnim;
     private float dimLevel = 1f; // 1 = tam belirgin, 0 = soluk
     private final android.graphics.Paint dimPaint = new android.graphics.Paint();
 
@@ -309,10 +307,8 @@ public class MainActivity extends Activity {
             applyDim(to);
             return;
         }
-        dimAnim = android.animation.ValueAnimator.ofFloat(dimLevel, to);
-        dimAnim.setDuration(220);
-        dimAnim.addUpdateListener(a -> applyDim((float) a.getAnimatedValue()));
-        dimAnim.start();
+        final float from = dimLevel;
+        dimAnim = Anim.run(allBox, 220, null, t -> applyDim(from + (to - from) * t), null);
     }
 
     private void applyDim(float level) {
@@ -368,7 +364,12 @@ public class MainActivity extends Activity {
                 bg.setStroke(has ? px(4) : 0, RING);
             }
             float s = has ? 1.1f : 1f;
-            view.animate().scaleX(s).scaleY(s).setDuration(110).start();
+            final float s0 = view.getScaleX();
+            Anim.replace(view, R_SCALE, 110, null, t -> {
+                float k = s0 + (s - s0) * t;
+                view.setScaleX(k);
+                view.setScaleY(k);
+            }, null);
             view.setElevation(has ? px(8) : 0);
             if (has) {
                 Object tag = view.getTag();
