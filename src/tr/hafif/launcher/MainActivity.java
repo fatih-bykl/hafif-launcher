@@ -400,12 +400,17 @@ public class MainActivity extends Activity {
         // Kartın kendisi kırpılmaz (parıltı dışarı taşabilsin); köşe yuvarlatma afişte yapılır
         styleFocus(f, px(10));
 
-        // Favorilerde: kartın üzerinde 3 sn beklenince bir ışık geçer
+        // Favorilerde: kartın üzerinde 3 sn beklenince bir ışık geçer ve kart seçili kaldıkça
+        // her 3 sn'de bir tekrarlar (ışık bittikten 3 sn sonra yenisi)
         if (favs.contains(pkg)) {
             final View.OnFocusChangeListener base = f.getOnFocusChangeListener();
+            final Runnable[] shineRef = new Runnable[1];
             final Runnable shine = () -> {
-                if (f.isFocused()) Shine.play(f, px(10));
+                if (!f.isFocused()) return;
+                Shine.play(f, px(10));
+                f.postDelayed(shineRef[0], Shine.DURATION_MS + SHINE_DELAY_MS);
             };
+            shineRef[0] = shine;
             f.setOnFocusChangeListener((view, has) -> {
                 base.onFocusChange(view, has);
                 view.removeCallbacks(shine);

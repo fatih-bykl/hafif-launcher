@@ -19,7 +19,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
  */
 final class Shine extends Drawable {
 
-    private static final long DURATION_MS = 1100;
+    static final long DURATION_MS = 1100;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path clip = new Path();
