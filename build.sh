@@ -14,7 +14,7 @@ rm -rf "$OUT"; mkdir -p "$OUT/classes" "$OUT/dex"
 "$BT/aapt2" compile --dir res -o "$OUT/res.zip"
 "$BT/aapt2" link -I "$PLAT" --manifest AndroidManifest.xml "$OUT/res.zip" \
   --min-sdk-version 21 --target-sdk-version 30 \
-  --version-code 1 --version-name 1.0 -o "$OUT/base.apk"
+  --version-code 2 --version-name 1.1 -o "$OUT/base.apk"
 
 javac -nowarn --release 8 -classpath "$PLAT" \
   -d "$OUT/classes" $(find src -name '*.java')

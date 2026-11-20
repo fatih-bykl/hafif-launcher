@@ -102,7 +102,7 @@ final class NetMeter {
         info = new TextView(c);
         info.setTextColor(0xFF9AA4B2);
         info.setTextSize(10);
-        // 2 satır: "Wi-Fi 300 Mbps · IP 192.168.1.65" ve "Test ↓… ↑… Mbps"
+        // 2 satır: "Wi-Fi 300 Mbps · IP 192.168.1.20" ve "Test ↓… ↑… Mbps"
         info.setMaxLines(2);
         info.setLineSpacing(0, 0.95f);
         info.setEllipsize(android.text.TextUtils.TruncateAt.END);
