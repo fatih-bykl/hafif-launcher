@@ -108,7 +108,8 @@ final class GaugeView extends View {
         g.setLocalMatrix(m);
         arc.setShader(g);
 
-        label.setTextSize(Math.max(4.5f * dp, size * 0.068f));
+        // Yazılar göstergenin boyutuyla orantılı: küçük hâlde de küçülür, üst üste binmez
+        label.setTextSize(size * 0.068f);
         value.setTextSize(size * 0.19f);
         unit.setTextSize(size * 0.085f);
     }
