@@ -56,6 +56,7 @@ public class MainActivity extends Activity {
     };
 
     private static final int COLS = 5;
+    private static final long SHINE_DELAY_MS = 3000; // favoride bu kadar beklenince ışık geçer
     private static final int SIDE = 24; // dp: odak büyümesi için kenarda çok küçük pay
     private static final int BG = 0xFF0E1116;
     private static final int CARD = 0xFF1C2230;
@@ -347,6 +348,23 @@ public class MainActivity extends Activity {
         f.setFocusable(true);
         // Kartın kendisi kırpılmaz (parıltı dışarı taşabilsin); köşe yuvarlatma afişte yapılır
         styleFocus(f, px(10));
+
+        // Favorilerde: kartın üzerinde 3 sn beklenince bir ışık geçer
+        if (favs.contains(pkg)) {
+            final View.OnFocusChangeListener base = f.getOnFocusChangeListener();
+            final Runnable shine = () -> {
+                if (f.isFocused()) Shine.play(f, px(10));
+            };
+            f.setOnFocusChangeListener((view, has) -> {
+                base.onFocusChange(view, has);
+                view.removeCallbacks(shine);
+                if (has) {
+                    view.postDelayed(shine, SHINE_DELAY_MS);
+                } else {
+                    Shine.stop(view);
+                }
+            });
+        }
 
         CharSequence label = ri.loadLabel(pm);
         f.setContentDescription(label);
