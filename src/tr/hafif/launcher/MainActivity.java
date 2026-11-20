@@ -102,8 +102,17 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        if (netMeter != null) netMeter.stop();
+    }
+
+    private NetMeter netMeter;
+
+    @Override
     protected void onResume() {
         super.onResume();
+        if (netMeter != null) netMeter.start();
         reload();
     }
 
@@ -140,6 +149,14 @@ public class MainActivity extends Activity {
         date.setTextColor(0xFFB0B8C4);
         date.setTextSize(18);
         top.addView(date, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        // İnternet hızı butonu: saatin hemen solunda
+        netMeter = new NetMeter(this, dp);
+        styleFocus(netMeter.view, px(16));
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        nlp.rightMargin = px(24);
+        top.addView(netMeter.view, nlp);
 
         TextClock clock = new TextClock(this);
         clock.setFormat12Hour("HH:mm");
