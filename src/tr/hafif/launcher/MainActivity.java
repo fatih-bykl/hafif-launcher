@@ -309,14 +309,13 @@ public class MainActivity extends Activity {
         bg.setColor(CARD);
         bg.setCornerRadius(radius);
         v.setBackground(bg);
-        // Çerçeve, afişin (banner) altında kalmasın diye ön plana çizilir
-        final GradientDrawable ring = new GradientDrawable();
-        ring.setColor(Color.TRANSPARENT);
-        ring.setCornerRadius(radius);
-        ring.setStroke(px(5), RING);
+        // 3B parıltılı çerçeve; afişin (banner) altında kalmasın diye ön plana çizilir
+        final FocusRing ring = new FocusRing(radius, dp);
         v.setOnFocusChangeListener((view, has) -> {
             if (view instanceof FrameLayout) {
                 ((FrameLayout) view).setForeground(has ? ring : null);
+            } else if (android.os.Build.VERSION.SDK_INT >= 23) {
+                view.setForeground(has ? ring : null);
             } else {
                 bg.setStroke(has ? px(4) : 0, RING);
             }
@@ -335,7 +334,7 @@ public class MainActivity extends Activity {
         FrameLayout f = new FrameLayout(this);
         f.setTag(pkg);
         f.setFocusable(true);
-        f.setClipToOutline(true);
+        // Kartın kendisi kırpılmaz (parıltı dışarı taşabilsin); köşe yuvarlatma afişte yapılır
         styleFocus(f, px(10));
 
         CharSequence label = ri.loadLabel(pm);
@@ -348,6 +347,14 @@ public class MainActivity extends Activity {
             ImageView iv = new ImageView(this);
             iv.setImageDrawable(banner);
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            final float cr = px(10);
+            iv.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override
+                public void getOutline(View v, android.graphics.Outline o) {
+                    o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), cr);
+                }
+            });
+            iv.setClipToOutline(true);
             f.addView(iv, new FrameLayout.LayoutParams(-1, -1));
         } else {
             LinearLayout col = new LinearLayout(this);
@@ -428,7 +435,7 @@ public class MainActivity extends Activity {
         allBox.removeAllViews();
 
         int usable = getResources().getDisplayMetrics().widthPixels - 2 * px(SIDE);
-        int fw = Math.round(usable / 4.5f) - px(16), fh = fw * 9 / 16;
+        int fw = Math.round(usable / 3.6f) - px(16), fh = fw * 9 / 16; // favoriler büyük kartlar
         for (String p : favs) favRow.addView(card(p, fw, fh));
         if (favs.isEmpty()) {
             TextView t = new TextView(this);
