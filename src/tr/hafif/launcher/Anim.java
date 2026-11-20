@@ -30,6 +30,12 @@ final class Anim {
 
     static Handle run(final View host, final long durationMs, final TimeInterpolator interp,
                       final Update update, final Runnable end) {
+        return run(host, durationMs, interp, update, end, 0);
+    }
+
+    /** frameMs > 0 ise kareler en fazla bu sıklıkta çizilir (ör. 33 → ~30 fps); işlemci tasarrufu. */
+    static Handle run(final View host, final long durationMs, final TimeInterpolator interp,
+                      final Update update, final Runnable end, final long frameMs) {
         final Handle h = new Handle();
         final long start = SystemClock.uptimeMillis();
         final Runnable[] step = new Runnable[1];
@@ -39,7 +45,8 @@ final class Anim {
                     : Math.min(1f, (SystemClock.uptimeMillis() - start) / (float) durationMs);
             update.on(interp == null ? t : interp.getInterpolation(t));
             if (t < 1f) {
-                host.postOnAnimation(step[0]);
+                if (frameMs > 0) host.postDelayed(step[0], frameMs);
+                else host.postOnAnimation(step[0]);
             } else if (end != null) {
                 end.run();
             }
@@ -51,9 +58,14 @@ final class Anim {
     /** View üzerinde, aynı anahtarla önceki animasyonu iptal edip yenisini başlatır. */
     static Handle replace(View host, int tagKey, long durationMs, TimeInterpolator interp,
                           Update update, Runnable end) {
+        return replace(host, tagKey, durationMs, interp, update, end, 0);
+    }
+
+    static Handle replace(View host, int tagKey, long durationMs, TimeInterpolator interp,
+                          Update update, Runnable end, long frameMs) {
         Object prev = host.getTag(tagKey);
         if (prev instanceof Handle) ((Handle) prev).cancel();
-        Handle h = run(host, durationMs, interp, update, end);
+        Handle h = run(host, durationMs, interp, update, end, frameMs);
         host.setTag(tagKey, h);
         return h;
     }

@@ -43,7 +43,7 @@ final class Shine extends Drawable {
         Anim.replace(v, R_SHINE, DURATION_MS, new AccelerateDecelerateInterpolator(), t -> {
             s.progress = t;
             s.invalidateSelf();
-        }, () -> v.getOverlay().remove(s));
+        }, () -> v.getOverlay().remove(s), 33); // ~30 fps: döngüde tekrarlandığı için işlemciyi yormasın
         v.setTag(R_SHINE_DRAWABLE, s);
     }
 

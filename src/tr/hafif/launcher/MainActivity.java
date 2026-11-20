@@ -83,7 +83,12 @@ public class MainActivity extends Activity {
         pm = getPackageManager();
         dp = getResources().getDisplayMetrics().density;
         getWindow().getDecorView().setBackgroundColor(BG);
-        setContentView(buildRoot());
+        // Arkada yavaş hareket eden gri duvar kâğıdı, önde ana ekran
+        FrameLayout frame = new FrameLayout(this);
+        backdrop = new Backdrop(this);
+        frame.addView(backdrop, new FrameLayout.LayoutParams(-1, -1));
+        frame.addView(buildRoot(), new FrameLayout.LayoutParams(-1, -1));
+        setContentView(frame);
         // Tüm Uygulamalar: odak orada değilken soluk ve koyu, odak inince belirgin
         setAllAppsActive(false, false);
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener(
@@ -114,14 +119,17 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         if (netMeter != null) netMeter.stop();
+        if (backdrop != null) backdrop.stop();
     }
 
     private NetMeter netMeter;
+    private Backdrop backdrop;
 
     @Override
     protected void onResume() {
         super.onResume();
         if (netMeter != null) netMeter.start();
+        if (backdrop != null) backdrop.start();
         reload();
     }
 
