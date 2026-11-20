@@ -136,6 +136,7 @@ public class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(0, px(24), 0, px(28));
         root.setClipChildren(false);
+        root.setClipToPadding(false);
         scroll.addView(root);
 
         // Üst çubuk: solda saat ve hemen altında aynı genişlikte tarih; sağda hız göstergesi ve ayarlar çarkı
@@ -167,7 +168,7 @@ public class MainActivity extends Activity {
         date.setSingleLine(true);
         LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        dlp.topMargin = px(4);
+        dlp.topMargin = -px(6); // saatin alt boşluğunu (font inişi) telafi eder, tarih saate yaklaşır
         timeBox.addView(date, dlp);
 
         // Tarihin genişliği saatin genişliğine eşit olsun (saat/tarih değiştikçe yeniden ayarlanır)
@@ -181,15 +182,16 @@ public class MainActivity extends Activity {
         styleFocus(netMeter.view, px(12));
         top.addView(netMeter.view);
 
-        TextView settings = new TextView(this);
-        settings.setText("⚙");
+        // Ayarlar: aynı boyutta yuvarlak buton, içinde vektör çark simgesi
+        FrameLayout settings = new FrameLayout(this);
         settings.setContentDescription("Ayarlar");
-        settings.setTextColor(Color.WHITE);
-        settings.setTextSize(24);
-        settings.setGravity(Gravity.CENTER);
-        settings.setIncludeFontPadding(false);
         settings.setFocusable(true);
         styleFocus(settings, px(26));
+        ImageView gear = new ImageView(this);
+        int gearId = getResources().getIdentifier("ic_settings", "drawable", getPackageName());
+        if (gearId != 0) gear.setImageResource(gearId);
+        gear.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        settings.addView(gear, new FrameLayout.LayoutParams(px(32), px(32), Gravity.CENTER));
         settings.setOnClickListener(v -> launch(new Intent(Settings.ACTION_SETTINGS)));
         LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(px(52), px(52));
         slp.leftMargin = px(16);
